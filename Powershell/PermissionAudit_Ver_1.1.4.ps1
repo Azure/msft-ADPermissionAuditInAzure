@@ -31,7 +31,7 @@
     PS C:\> .\get-AccessADRight.ps1
 
 .NOTES
-    Author: Mariusz Rus
+    Author: Mariusz Rus, Jason Rahn
     Last Edit: 2021-02-10
     Version 1.0 - initial release of PermissionAudit
     Version 1.1.2 - Added Menus and Option to include deleted objects
