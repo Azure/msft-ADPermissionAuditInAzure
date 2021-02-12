@@ -36,7 +36,7 @@
     Version 1.0 - initial release of PermissionAudit
     Version 1.1.2 - Added Menus and Option to include deleted objects
     Version 1.1.3 - Added Added more info messages and progress. Added ability to run from command line with no menus. 
-    Version 1.1.4 - Various small code prettifiers.
+    Version 1.1.4 - Various small code prettifiers. Upload to GitHub
 #>
 
 
