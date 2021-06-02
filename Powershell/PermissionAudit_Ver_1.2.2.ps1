@@ -1,4 +1,5 @@
-﻿using namespace System.Security.AccessControl
+﻿#requires -Version 7.0
+using namespace System.Security.AccessControl
 
 param(
 [string]$namingcontext,
@@ -39,8 +40,8 @@ param(
     Version 1.1.2 - Added Menus and Option to include deleted objects
     Version 1.1.3 - Added Added more info messages and progress. Added ability to run from command line with no menus. 
     Version 1.1.4 - Various small code prettifiers. Upload to GitHub 
-    :TODO add inheritance option
-    :TODO add Agent file as seprate from csv
+    Version 1.2.2 - Added multithreading and ACE type search
+    
 #>
 
 
@@ -52,7 +53,6 @@ Function Start-MenuNamingContext {
     )
     $ReadRootDSEObject = Get-adrootdse
     $retriveNamingContext = $ReadRootDSEObject | Select-Object -ExpandProperty namingContexts
-    #$PermissionsColected = @()
     $ItemCount = $retriveNamingContext.Count
     [int]$iindex = 0
 
@@ -94,6 +94,42 @@ Function Start-MenuNamingContext {
     #ENDOFFUNCTION Start-MenuNamingContext
 }
 
+Function Get-myExtendedRights{
+    $RootConfiguration = Get-ADRootDSE
+    #Load SchemaIDs
+    $SchemaPath = "CN=Schema," +  $RootConfiguration.configurationNamingContext.ToString()
+    $LoadGuids = get-adobject -SearchBase $SchemaPath -SearchScope Subtree -Filter * -Properties SchemaIDGuid
+    #Load ExtendedRights
+    $extendedRightsPath = "CN=Extended-Rights," +  $RootConfiguration.configurationNamingContext.ToString()
+    $extendedRights = get-adobject -SearchBase $extendedRightsPath -SearchScope Subtree -Filter 'ObjectClass -eq "controlAccessRight"' -Properties 'rightsGuid'
+    
+    $listOfACEguids =@()
+    Foreach ($myguid in $LoadGuids){
+           
+        If ($NULL -ne $myguid.SchemaIDGuid){
+            [guid]$ArrayOfGuid = $myguid.SchemaIDGuid
+            $GuidtoPSObject = $ArrayOfGuid.ToString()
+            $TempPsoobj = [PSObject]::New()
+            $TempPsoobj |Add-Member -MemberType NoteProperty -Name "PropName" -Value $myguid.Name
+            $TempPsoobj |Add-Member -MemberType NoteProperty -Name "ACETypeGuid" -Value $GuidtoPSObject
+            $listOfACEguids += $TempPsoobj
+        }
+    }
+
+    Foreach ($SingleextendedRight in $extendedRights) {
+         If ($NULL -ne $SingleextendedRight.rightsGuid){
+
+                $TempPsoobj = [PSObject]::New()
+                $TempPsoobj |Add-Member -MemberType NoteProperty -Name "PropName" -Value $SingleextendedRight.Name
+                $TempPsoobj |Add-Member -MemberType NoteProperty -Name "ACETypeGuid" -Value $SingleextendedRight.rightsGuid
+                $listOfACEguids += $TempPsoobj
+
+        }
+    }
+
+     Return   $listOfACEguids
+
+}
 
 
 Function Start-MenuIncludeDeleted {
@@ -113,7 +149,7 @@ function Global:Get-accessmaskstring{
 
     )
     $strOfAcessMask = ""
-    $arrayOfValues = @()
+    
  
 [Flags()] enum ActiveDirectoryRightsEnum {
     AccessSystemSecurity = 16777216
@@ -145,7 +181,7 @@ else{
 [ActiveDirectoryRightsEnum]$strOfAcessMask = [ActiveDirectoryRightsEnum]$accessmasknum 
 
 [string]$listofacces = $strOfAcessMask.ToString()
-$arrayOfValues = ($listofacces -split "," -replace " ","")
+
 
 }
 
@@ -175,15 +211,14 @@ Function queryobjectsfromADmulti{
     $adsisearcher.PropertiesToLoad.Add("DistinguishedName")
     $adsisearcher.PropertiesToLoad.Add("nTSecurityDescriptor")
     $adsisearcher.SearchRoot = $ldappath 
-    #$adsisearcher.SizeLimit = 2147483647
-    $adsisearcher.SizeLimit = 1000
+    $adsisearcher.SizeLimit = 2147483647
+    #$adsisearcher.SizeLimit = 1000
     $adsisearcher.PageSize = 4000
     $adsisearcher.Tombstone = $Tombstone
     If ($Tombstone){
         $adsisearcher.Filter = "((isDeleted=TRUE))" #
     }
     $data = $adsisearcher.FindAll()
-    $y=1
     [int]$numberofobjectstoprocess = 0
     $numberofobjectstoprocess = $data.Count
     $numberofobjectstoprocess
@@ -209,19 +244,20 @@ Function queryobjectsfromADmulti{
          #endregion Split Data into Array of Arrays
 
          #Region Main Loop processing data
-         $arrayOfArrays | foreach-object -Parallel {
+         $arrayOfArrays | foreach-object  -Parallel {
          
          [array]$itemarray = $_
          
          
-         $Myjob = $itemarray | ForEach-Object  {
+         
+         $itemarray | ForEach-Object  {
             function Global:Get-accessmaskstring{
                 param(
                         [int32]$accessmasknum
             
                 )
                 $strOfAcessMask = ""
-                $arrayOfValues = @()
+                
              
             [Flags()] enum ActiveDirectoryRightsEnum {
                 AccessSystemSecurity = 16777216
@@ -253,7 +289,7 @@ Function queryobjectsfromADmulti{
             [ActiveDirectoryRightsEnum]$strOfAcessMask = [ActiveDirectoryRightsEnum]$accessmasknum 
             
             [string]$listofacces = $strOfAcessMask.ToString()
-            $arrayOfValues = ($listofacces -split "," -replace " ","")
+            
             
             }
             
@@ -267,14 +303,15 @@ Function queryobjectsfromADmulti{
             #endofnestedfunction
             $Dentry = $_
             $Props = $Dentry.Properties
-            #$test = ''
+            
             $Mychararray = $props.ntsecuritydescriptor
         
-            $SecDesctest=$Mychararray.Item(0) #This line gives error on CN=Deleted Objects,DC=IDNTlabs563,DC=identitybits,DC=com
+            $SecDesctest=$Mychararray.Item(0) 
             $DNofObject = $props.distinguishedname
             $helloMydarling = [System.Security.AccessControl.RawSecurityDescriptor]::new($SecDesctest,0)
             $allACLEntry = $helloMydarling.DiscretionaryAcl
-            $Emptyarray = @() #moved out of low loop to be done once per user
+            $ownerValue = $helloMydarling.Owner.Value
+            $Emptyarray = @() 
             #comment below
             foreach ($ACLentry in $allACLEntry) {
             $MyValueofaccessmask = Get-accessmaskstring  ($ACLentry).AccessMask 
@@ -295,7 +332,33 @@ Function queryobjectsfromADmulti{
                                 $obj |Add-Member -MemberType NoteProperty -Name "PropagationFlags" -Value $ACLentry.PropagationFlags
                                 $obj |Add-Member -MemberType NoteProperty -Name "AuditFlags" -Value $ACLentry.AuditFlags
                                 $obj |Add-Member -MemberType NoteProperty -Name "ObjectAceType" -Value $ACLentry.ObjectAceType
+                                If ($null -ne $ACLentry.ObjectAceType){
+                                    [string]$StrOAType = $ACLentry.ObjectAceType
+                                    $Translated = $ACLentry.ObjectAceType
+                                    
+                                    Foreach ($RightGuid in $using:GetAlistOfExtendedRights){
+                                        [string]$strRGuid = "None"
+                                        [string]$strRGuid = $RightGuid.ACETypeGuid
+                                        
+                                        If ($strRGuid -like "$StrOAType"){
+                                        
+                                        $Translated =  $RightGuid.PropName
+                                        }
+                                        Else{
+                                                 
+                                            
+                                        }
+                                        
+                                        }  
+                                }
+                                Else{
+                                    $Translated = ""
+                                }
+                                
+                                    #endOFForEachLoop
+                                $obj |Add-Member -MemberType NoteProperty -Name "ObjectAceTypeTranslated" -Value   $Translated
                                 $obj |Add-Member -MemberType NoteProperty -Name "ObjectAceFlags" -Value $ACLentry.ObjectAceFlags
+                                $obj |Add-Member -MemberType NoteProperty -Name "Owner" -Value $ownerValue
                                 $Emptyarray += $obj
                                 
                              
@@ -305,12 +368,12 @@ Function queryobjectsfromADmulti{
     #coomment above
         $Emptyarray | export-csv $using:logfilepath  -Force -NoTypeInformation -Append #moved out of low loop to be done once per user
             
-            #Exit-PSHostProcess
+        
             
         } 
 
          
-         } -ThrottleLimit $TrottleProcCount -AsJob -UseNewRunspace #Uses Number processors variable for throttle limit
+         } -ThrottleLimit $TrottleProcCount -AsJob -UseNewRunspace  #Uses Number processors variable for throttle limit
          #endRegion Main Loop processing data
     
     
@@ -318,15 +381,15 @@ Function queryobjectsfromADmulti{
     
    
     $fsx = 2
-    [int]$OriginalCountLeftJobs = (Get-job -IncludeChildJob -ChildJobState NotStarted |  Where State -like "NotStarted" | Measure).Count
+    [int]$OriginalCountLeftJobs = (Get-job -IncludeChildJob -ChildJobState NotStarted |  Where-Object State -like "NotStarted" | Measure-Object).Count
     Do{
-    $CountLeftJobs = Get-job -IncludeChildJob -ChildJobState NotStarted |  Where State -like "NotStarted" | Measure
+    $CountLeftJobs = Get-job -IncludeChildJob -ChildJobState NotStarted |  Where-Object State -like "NotStarted" | Measure-Object
     $fsx = $CountLeftJobs.Count
     
     
-    $CountLeftJobsRunning = get-job -IncludeChildJob -ChildJobState Running |  Where State -like "Running" | Measure
+    $CountLeftJobsRunning = get-job -IncludeChildJob -ChildJobState Running |  Where-Object State -like "Running" | Measure-Object
     $FSXRunning = $CountLeftJobsRunning.Count
-    #$FSXRunning
+    
     
         If ($fsx -lt 2){
             
@@ -343,7 +406,7 @@ Function queryobjectsfromADmulti{
         
         }
         Start-sleep -Seconds 10
-        Get-job -State  Completed | Where PSjobtypename -like "PSTaskJob" | Remove-job
+        Get-job -State  Completed | Where-Object PSjobtypename -like "PSTaskJob" | Remove-job
     } While ($fsx -gt 1)
 
     $adsisearcher = $null
@@ -364,15 +427,13 @@ Function processgetadobject {
 
 
 $Nameselection = Start-MenuNamingContext -namingcontextinfunction $namingcontext
+$Global:GetAlistOfExtendedRights = Get-myExtendedRights
 
 
-$builtins = @('NT AUTHORITY', 'BUILTIN') #this filter removes builtin and NT Authority permissions which are OS rights)
 $Mydate =""
 $Mydate = Get-Date -Format "yyyy-MM-dd-HH-mm"
 [string]$PartionToAttach = ""
-$ObjectsInContext =''
 
-$z = 1
 #endregion
 
 If ( $Nameselection -like "-1") {
@@ -410,7 +471,7 @@ Else {
 
 switch ($includedeletedobjects) {
     'y' {
-        #$PartionToAttach = Get-DeletedNamingContext
+        
         Clear-Host
         write-host "Retriving list of objects from $PartionToAttach "
         $startCounter = Get-date
@@ -427,7 +488,7 @@ switch ($includedeletedobjects) {
         Clear-Host
         write-host "Retriving list of objects from $PartionToAttach "
         $startCounter = Get-date
-        #$ObjectsInContext = get-adobject -Filter *  -SearchScope Subtree  -SearchBase $PartionToAttach -Properties DistinguishedName, nTSecurityDescriptor
+        
 
         $LdapPatition = "LDAP://" + $PartionToAttach
 
