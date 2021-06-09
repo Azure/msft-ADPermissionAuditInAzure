@@ -313,11 +313,14 @@ Function queryobjectsfromADmulti{
             $ownerValue = $helloMydarling.Owner.Value
             $Emptyarray = @() 
             #comment below
+            $a = get-date
+            
             foreach ($ACLentry in $allACLEntry) {
             $MyValueofaccessmask = Get-accessmaskstring  ($ACLentry).AccessMask 
              If (($ACLentry).IsInherited -like "false"){
              
                                 $obj = [PSObject]::New()
+                                $obj |Add-Member -MemberType NoteProperty -Name "RecordTime" -Value $a.tostring("yyyy-MM-ddTHH:mm:ss")
                                 $obj |Add-Member -MemberType NoteProperty -Name "DistinguishedName" -Value $DNofObject[0]
                                 $obj |Add-Member -MemberType NoteProperty -Name "ActiveDirectoryRights" -Value $MyValueofaccessmask
                                 $obj |Add-Member -MemberType NoteProperty -Name "AceType" -Value $ACLentry.AceType
@@ -402,7 +405,7 @@ Function queryobjectsfromADmulti{
 
 
         }
-        Else {Write-Progress -Id 0 -Activity "Processing objects $fsx" -Status "Progress:" -PercentComplete ($fsx/$OriginalCountLeftJobs*100)
+        Else {Write-Progress -Id 0 -Activity "Jobs left for processing $fsx" -Status "Progress:" -PercentComplete ($fsx/$OriginalCountLeftJobs*100)
         
         }
         Start-sleep -Seconds 10
