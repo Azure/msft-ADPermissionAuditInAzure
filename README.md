@@ -8,8 +8,8 @@ or other security database for later review or investigation.
 ".\Export-ADPermissionsData.ps1 -namingcontext <string> -includedeletedobjects <string> -outputfile <string>"
 
 [namingcontext]
-    The parameter namingcontext is used to define the naming context to search
-    Example. would be "DC=contoso,DC=com" or you could use OU path like this "OU=accounts,DC=contoso,DC=com"
+The parameter namingcontext is used to define the naming context to search
+An example would be "DC=contoso,DC=com" or you could use OU path like this "OU=accounts,DC=contoso,DC=com"
 
 [includedeletedobjects]
     The parameter includedeletedobjects is used to define if Deleted objects should be searched or not.
@@ -21,10 +21,10 @@ or other security database for later review or investigation.
   
 ### Examples  
 The example below exports permission information on deleted objects only.
-    *[.\Export-ADPermissionsData.ps1 -namingcontext "DC=contoso,DC=com" -includedeletedobjects "y"]
+    .\Export-ADPermissionsData.ps1 -namingcontext "DC=contoso,DC=com" -includedeletedobjects "y"
 
 Another example : if you run script with no paramaters, menu will appear allowing selection of context and if deleted objects should be included.
-    PS C:\> .\Export-ADPermissionsData.ps1
+    .\Export-ADPermissionsData.ps1
   
 ## Issues 
 If you find any bugs when using ----- , please file an issue in our [GitHub Issues](https://github.com/Azure/msft-ADPermissionAuditInAzure/issues) page.
