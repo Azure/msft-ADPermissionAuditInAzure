@@ -1,6 +1,8 @@
-﻿#requires -Version 7.0
-using namespace System.Security.AccessControl
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
+#requires -Version 7.0
+using namespace System.Security.AccessControl
 param(
 [string]$namingcontext,
 [string]$includedeletedobjects,
