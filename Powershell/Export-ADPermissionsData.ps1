@@ -27,25 +27,21 @@ param(
     example would be "c:\temp\mylog.csv"
 .EXAMPLE
     The example below does blah
-    PS C:\> .\get-AccessADRight.ps1 -namingcontext "DC=contoso,DC=com" -includedeletedobjects "y" 
+    PS C:\> .\Export-ADPermissionsData.ps1 -namingcontext "DC=contoso,DC=com" -includedeletedobjects "y" 
 
 .EXAMPLE
     Another example : if you run script with no paramaters, menu will appear allowing selection of context and if deleted objects should be included.
-    PS C:\> .\get-AccessADRight.ps1
+    PS C:\> .\Export-ADPermissionsData.ps1
 
 .NOTES
     Author: Mariusz Rus, Jason Rahn
     Last Edit: 2021-02-10
-    Version 1.0 - initial release of PermissionAudit
-    Version 1.1.2 - Added Menus and Option to include deleted objects
-    Version 1.1.3 - Added Added more info messages and progress. Added ability to run from command line with no menus. 
-    Version 1.1.4 - Various small code prettifiers. Upload to GitHub 
-    Version 1.2.2 - Added multithreading and ACE type search
-    
+    Version 0.1.2 - Added Menus and Option to include deleted objects
+    Version 0.1.3 - Added Added more info messages and progress. Added ability to run from command line with no menus. 
+    Version 0.1.4 - Various small code prettifiers. Upload to GitHub 
+    Version 0.2.2 - Added multithreading and ACE type search
+    Version 1.0 - initial release of Export-ADPermissionsData
 #>
-
-
-
 
 Function Start-MenuNamingContext {
     param(
@@ -87,10 +83,6 @@ Function Start-MenuNamingContext {
      Return $namingcontextinfunction
     }
     
-
-    
-
-
     #ENDOFFUNCTION Start-MenuNamingContext
 }
 
