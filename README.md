@@ -12,7 +12,7 @@ or other security database for later review or investigation.
 The parameter namingcontext is used to define the naming context to search
 An example would be "DC=contoso,DC=com" or you could use OU path like this "OU=accounts,DC=contoso,DC=com"
 
-####includedeletedobjects
+#### includedeletedobjects
     
     The parameter includedeletedobjects is used to define if Deleted objects should be searched or not.
     Options are "y", "n", "c" for cancel script.
