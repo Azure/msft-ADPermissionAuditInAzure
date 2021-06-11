@@ -7,17 +7,17 @@ or other security database for later review or investigation.
 
 .\Export-ADPermissionsData.ps1 -namingcontext \<string\> -includedeletedobjects \<string\> -outputfile \<string\>
 
-#### namingcontext
+#### -namingcontext
     
 The parameter namingcontext is used to define the naming context to search
 An example would be "DC=contoso,DC=com" or you could use OU path like this "OU=accounts,DC=contoso,DC=com"
 
-#### includedeletedobjects
+#### -includedeletedobjects
     
 The parameter includedeletedobjects is used to define if Deleted objects should be searched or not.
 Options are "y", "n", "c" for cancel script.
 
-#### outputfile
+#### -outputfile
     
 The parameter outputfile is used to define path where the CSV file is saved. This is optional, if 
 ommitted script will save file to the location of your powershell location session with the prefix 
