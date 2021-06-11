@@ -34,7 +34,7 @@ if deleted objects should be included.
     .\Export-ADPermissionsData.ps1
   
 ## Issues 
-If you find any bugs when using Export-ADPermissionsData , please file an issue in our [GitHub Issues](https://github.com/Azure/msft-ADPermissionAuditInAzure/issues) page.
+If you find any bugs when using Export-ADPermissionsData, please file an issue in our [GitHub Issues](https://github.com/Azure/msft-ADPermissionAuditInAzure/issues) page.
 
 ## Trademarks
 
