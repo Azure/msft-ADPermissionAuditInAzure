@@ -5,7 +5,7 @@ or other security database for later review or investigation.
 
 ## Usage
 
-".\Export-ADPermissionsData.ps1 -namingcontext <string> -includedeletedobjects <string> -outputfile <string>"
+".\Export-ADPermissionsData.ps1 -namingcontext <<string>> -includedeletedobjects <string> -outputfile <string>"
 
 #### namingcontext
     
